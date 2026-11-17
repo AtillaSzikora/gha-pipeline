@@ -10,8 +10,6 @@ jobs:
     permissions:
       contents: read
       id-token: write
-    env:
-        ECR_REPO_URI: "362099375729.dkr.ecr.eu-central-1.amazonaws.com/atilla/gha-pipeline"
     steps:
       - name: --Checkout--
         uses: actions/checkout@v7
@@ -22,7 +20,7 @@ jobs:
           python-version: "3.13"
 
       - name: --Set up UV--
-        uses: actions/astral-sh/setup-uv@v10.3.3
+        uses: astral-sh/setup-uv@v10.3.3
         with:
           version: "0.11.0"
           enable-cache: true
@@ -46,9 +44,9 @@ jobs:
           
       - name: --Tag image--
         run: |
-          docker tag py-app:latest "$ECR_REPO_URI:$GITHUB_SHA"
+          docker tag py-app:latest "${{ vars.AWS_REPO_URI }}:${{ github.sha }}"
 
       - name: --Push image--
         run: |
-          docker push "$ECR_REPO_URI:$GITHUB_SHA"
+          docker push "${{ vars.AWS_REPO_URI }}:${{ github.sha }}"
 
