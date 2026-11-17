@@ -1,0 +1,54 @@
+name: Build and Push to ECR
+on:
+  push:
+    branches: [main]
+    paths: [src/**]
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    env:
+        ECR_REPO_URI: "362099375729.dkr.ecr.eu-central-1.amazonaws.com/atilla/gha-pipeline"
+    steps:
+      - name: --Checkout--
+        uses: actions/checkout@v7
+
+      - name: --Set up Python--
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: --Set up UV--
+        uses: actions/astral-sh/setup-uv@v10.3.3
+        with:
+          version: "0.11.0"
+          enable-cache: true
+
+      - name: --Install dependencies--
+        run: uv sync --locked
+        working-directory: src
+
+      - name: --Configure AWS--
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN}}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: --Login to ECR--
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: --Build image--
+        run: |
+          docker build --tag py-app:latest src
+          
+      - name: --Tag image--
+        run: |
+          docker tag py-app:latest "$ECR_REPO_URI:$GITHUB_SHA"
+
+      - name: --Push image--
+        run: |
+          docker push "$ECR_REPO_URI:$GITHUB_SHA"
+
